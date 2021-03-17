@@ -1,9 +1,11 @@
 package com.elab.data.dts.utils;
 
+import com.alibaba.fastjson.JSON;
 import com.elab.data.dts.common.FieldEntryHolder;
 import com.elab.data.dts.common.Util;
 import com.elab.data.dts.formats.avro.Decimal;
 import com.elab.data.dts.formats.avro.Field;
+import com.elab.data.dts.formats.avro.Operation;
 import com.elab.data.dts.formats.avro.Record;
 import com.elab.data.dts.model.DDLData;
 import com.elab.data.dts.model.DMLData;
@@ -150,13 +152,13 @@ public class DataParseUtils {
 
     private static Object getTypeValue(Field field, Object toPrintBefore) {
         Object text = FIELD_CONVERTER.convert(field, toPrintBefore).toString();
-
+    
         if (text != null && field.getDataTypeNumber() == 7) {
-            text = ISO_8601_EXTENDED_DATETIME_TIME_ZONE_FORMAT.format(Long.valueOf(text.toString()) * 1000);
-        } else {
-            text.toString();
+            text = ISO_8601_EXTENDED_DATETIME_TIME_ZONE_FORMAT.format(Long.parseLong(text.toString()) * 1000);
+        } else if (text != null && field.getDataTypeNumber() == 245) {
+            text = JSON.parseObject(text.toString(), Map.class);
         }
-
+    
         return text;
     }
 
@@ -193,14 +195,37 @@ public class DataParseUtils {
     public static DMLData parseDML(Record record) {
         DMLData dmlData = new DMLData();
         parseDatabaseInfo(record, dmlData);
-        dmlData.setOperation(record.getOperation());
+        Operation operation = record.getOperation();
+        dmlData.setOperation(operation);
         List<String> changeFieldList = new ArrayList<>();
         Map<String, FieldData> fieldDataMap = parseUpdateField(record, changeFieldList);
+        if (operation == Operation.INSERT || operation == Operation.UPDATE) {
+            Map<String, Object> validFieldDataMap = parseValidUpdateField(fieldDataMap, changeFieldList);
+            dmlData.setValidFieldDataMap(validFieldDataMap);
+        }
         dmlData.setId(getFieldValue(fieldDataMap, "id"));
         dmlData.setFieldDataMap(fieldDataMap);
         dmlData.setChangeFieldList(changeFieldList);
         dmlData.setSourceTimestamp(record.getSourceTimestamp());
         return dmlData;
+    }
+    
+    
+    /**
+     * 解析出有效数据
+     *
+     * @param fieldDataMap
+     * @param changeFieldList
+     * @return
+     */
+    public static Map<String, Object> parseValidUpdateField(Map<String, FieldData> fieldDataMap, List<String> changeFieldList) {
+        Map<String, Object> res = new HashMap<>(16);
+        for (String f : changeFieldList) {
+            FieldData fieldData = fieldDataMap.get(f);
+            res.put(f, fieldData.getValue());
+        }
+        res.put("id", fieldDataMap.get("id").getValue());
+        return res;
     }
 
     /**

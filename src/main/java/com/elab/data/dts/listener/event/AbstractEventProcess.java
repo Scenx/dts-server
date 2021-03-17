@@ -7,8 +7,6 @@ import com.elab.data.dts.consts.DTSConstants;
 import com.elab.data.dts.formats.avro.Operation;
 import com.elab.data.dts.model.DMLData;
 import com.elab.data.dts.model.TableData;
-import com.elab.data.dts.sender.IMonitorDataProducer;
-import com.elab.data.dts.sender.ISendProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,23 +24,12 @@ public abstract class AbstractEventProcess {
 
     private Logger logger = LoggerFactory.getLogger(getClass());
 
-    @Autowired(required = false)
-    private IMonitorDataProducer producer;
-
     @Autowired
     protected DTSProperties dtsProperties;
 
     @Autowired
     private DebugValueComponent debugValueComponent;
-
-    /**
-     * 如果子类有实现代表希望通过发射器将收到的数据发送出去
-     *
-     * @return
-     */
-    public ISendProducer getProducer() {
-        return null;
-    }
+    
 
     /**
      * 是否关注该操作名称
@@ -59,11 +46,11 @@ public abstract class AbstractEventProcess {
      * @throws Exception
      */
     protected boolean process(TableData tableData) throws Exception {
-        // 实现数据过滤
-
+        // 实现数据过滤  20210317已关闭
+/*
         if (filterData(tableData)) {
             return false;
-        }
+        }*/
 
         return process0(tableData);
     }
@@ -126,37 +113,15 @@ public abstract class AbstractEventProcess {
             boolean process = process(tableData);
 
             // 3. 发送数据
-            if (process) {
+            /*if (process) {
                 sendData(tableData);
-            }
+            }*/
         } catch (Exception e) {
-            sendErrorMsg(e, record, tableData);
+            //sendErrorMsg(e, record, tableData);
             logger.error("处理数据失败", e);
         }
     }
-
-    private void sendErrorMsg(Throwable e, Object o, TableData tableData) {
-        if (producer != null) {
-
-            if (tableData != null) {
-                o = tableData;
-            }
-
-            producer.sendError(e, o);
-        }
-    }
-
-    /**
-     * 如果子类指定实现了getProducer方法,那么通过该方法进行发送，如果还有其他操作可以重写
-     *
-     * @param tableData
-     */
-    protected void sendData(TableData tableData) throws Exception {
-        ISendProducer producer = getProducer();
-        if (producer != null) {
-            producer.send(tableData);
-        }
-    }
+    
 
     /**
      * 是否关注个该数据

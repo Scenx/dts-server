@@ -50,7 +50,7 @@ public class StartCallback implements ApplicationRunner {
         if (pros.getInitialCheckpointName() != null) {
             properties.setProperty(Names.INITIAL_CHECKPOINT_NAME, pros.getInitialCheckpointName());
         } else {
-            properties.setProperty(Names.INITIAL_CHECKPOINT_NAME, (System.currentTimeMillis() / 1000) + "");
+            properties.setProperty(Names.INITIAL_CHECKPOINT_NAME, (System.currentTimeMillis() / 1000)-60 + "");
         }
         // if force use config checkpoint when start. for checkpoint reset
         properties.setProperty(Names.USE_CONFIG_CHECKPOINT_NAME, pros.getUseConfigCheckpointName());

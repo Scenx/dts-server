@@ -24,6 +24,11 @@ public class DMLData extends TableData {
      * 数据的主键
      */
     private String id;
+    
+    /**
+     * 有效信息：增是全部字段，改是改动字段加主键，删是不处理
+     */
+    private Map<String, Object> validFieldDataMap;
 
     public Map<String, FieldData> getFieldDataMap() {
         return fieldDataMap;
@@ -47,5 +52,13 @@ public class DMLData extends TableData {
 
     public void setId(String id) {
         this.id = id;
+    }
+    
+    public Map<String, Object> getValidFieldDataMap() {
+        return validFieldDataMap;
+    }
+    
+    public void setValidFieldDataMap(Map<String, Object> validFieldDataMap) {
+        this.validFieldDataMap = validFieldDataMap;
     }
 }
